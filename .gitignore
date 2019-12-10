@@ -1,0 +1,5 @@
+ski
+*.o
+*.hi
+*.ski
+*.lambda
