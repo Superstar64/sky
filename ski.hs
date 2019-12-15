@@ -54,6 +54,7 @@ search _ IK = False
 search _ II = False
 
 simplify :: Intermidate -> Intermidate
+simplify (ILambda name (ICall text (IVariable name'))) | name == name' && (not $ search name text) = simplify text
 simplify (IVariable name) = IVariable name
 simplify (ICall function argument) = ICall (simplify function) (simplify argument)
 simplify (ILambda name term) | (not $ search name term) = ICall IK $ simplify term
