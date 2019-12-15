@@ -1,17 +1,18 @@
-import Data.Map
+import qualified Data.Set as Set
+import Data.Set (Set)
+import Data.Void
+
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Error
 import Control.Monad.Combinators
-import Data.Void
 
-data Calculi = Variable String | String :=> Calculi | Calculi :$ Calculi deriving Show
-infixr :=>
+data Calculi = Variable String | Lambda String Calculi | Call Calculi Calculi deriving Show
 
 type Parser = Parsec Void String
 
 term :: Parser Calculi
-term = fmap (foldl1 (:$)) $ some $ named <|> parens
+term = fmap (foldl1 Call) $ some $ named <|> parens
 
 named :: Parser Calculi
 named = do
@@ -25,15 +26,20 @@ lambda :: String -> Parser Calculi
 lambda current = do
  string "=>"
  space
- (current :=>) <$> term
+ Lambda current <$> term
 
 
-data Ski = S | K | Ski :! Ski deriving Show
+free :: Calculi -> Set String
+free (Variable name) = Set.singleton name
+free (Call function argument) = Set.union (free function) (free argument)
+free (Lambda name text) = free text Set.\\ Set.singleton name
+
+data Ski = S | K | SKCall Ski Ski deriving Show
 
 pretty :: Ski -> String
 pretty S = "s"
 pretty K = "k"
-pretty (function :! argument) = pretty function ++ "(" ++ pretty argument ++ ")"
+pretty (SKCall function argument) = pretty function ++ "(" ++ pretty argument ++ ")"
 
 -- https://en.wikipedia.org/wiki/Combinatory_logic#Completeness_of_the_S-K_basis
 
@@ -60,16 +66,16 @@ simplify II = II
 
 expand :: Calculi -> Intermidate
 expand (Variable name) = IVariable name
-expand (name :=> text) = ILambda name (expand text)
-expand (function :$ argument) = ICall (expand function) (expand argument)
+expand (Lambda name text) = ILambda name (expand text)
+expand (Call function argument) = ICall (expand function) (expand argument)
 
 reduce :: Intermidate -> Maybe Ski
 reduce (IVariable _) = Nothing
-reduce (ICall function argument) = pure (:!) <*> reduce function <*> reduce argument
+reduce (ICall function argument) = pure SKCall <*> reduce function <*> reduce argument
 reduce (ILambda _ _) = Nothing
 reduce IS = Just S
 reduce IK = Just K
-reduce II = Just $ (S :! K) :! K
+reduce II = Just $ SKCall (SKCall S K) K
 
 convert :: Calculi -> Maybe Ski
 convert = reduce . simplify . expand
@@ -80,5 +86,7 @@ main = do
  case lambda of
   Left error -> putStrLn $ errorBundlePretty error
   Right valid -> case convert valid of
-   Nothing -> putStrLn "error: free variables"
+   Nothing -> do 
+    putStrLn "error: free variables"
+    print $ Set.toAscList $ free valid
    Just valid -> putStrLn $ pretty valid
