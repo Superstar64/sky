@@ -12,17 +12,17 @@ data Calculi = Variable String | Lambda String Calculi | Call Calculi Calculi de
 type Parser = Parsec Void String
 
 term :: Parser Calculi
-term = fmap (foldl1 Call) $ some $ letin <|> named <|> parens
+term = fmap (foldl1 Call) $ some $ mlambda <|> letin <|> named <|> parens
 
 letin :: Parser Calculi
 letin = do 
  string "let" *> space
  name <- some alphaNumChar <* space
  string "=" *> space
- variable <- term
+ value <- term
  string ";" *> space
  text <- term
- return $ Call (Lambda name text) variable
+ return $ Call (Lambda name text) value
 
 named :: Parser Calculi
 named = do
@@ -38,6 +38,13 @@ lambda current = do
  space
  Lambda current <$> term
 
+mlambda :: Parser Calculi
+mlambda = do
+ string "\\" *> space
+ variables <- some (some alphaNumChar <* space)
+ string "->" *> space
+ text <- term
+ return (foldr Lambda text variables)
 
 free :: Calculi -> Set String
 free (Variable name) = Set.singleton name

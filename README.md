@@ -8,7 +8,8 @@ The Haskell Platform and Megaparsec are required to build.
 # Language
 The language has 5 types of terms:
 * variables : ``x``
-* lambdas : ``f => x``
+* lambdas : ``a => x``
+* multi-argument lambdas: ``\a b c -> x``
 * application : ``f x``
 * parenthesis : ``(x)``
 * let-in : ``let a = b; x``
