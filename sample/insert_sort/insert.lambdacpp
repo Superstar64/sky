@@ -1,0 +1,13 @@
+
+// awful implementation of insert sort
+
+\while view pack zero minus1 plus1 lessthan greater and swap index length array -> 
+let result = while (pack array (plus1 zero) zero) (\x -> view x ( \a i j -> lessthan i (length a))) ( \s ->
+	let sp = view s (\a i j -> pack a i i);
+	let spp = while sp (\x -> view x ( \a i j -> and (greater j zero) (greater (index a (minus1 j)) (index a j)))) (\w ->
+		let wp = view w (\a i j -> pack (swap a j (minus1 j)) i j);
+		let wpp = view wp ( \a i j -> pack a i (minus1 j));
+		wpp);
+	 let sppp = view spp (\a i j -> pack a (plus1 i) j);
+	 sppp);
+view result (\a i j -> a)
