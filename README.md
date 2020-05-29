@@ -1,5 +1,5 @@
 # LambdaSki
-Simple Lambda Calculus to Ski Translator.
+Simple Lambda Calculus to Ski compiler.
 
 This is a simple program that converts lambda calculus expressions into sk combinator expressions.
 
