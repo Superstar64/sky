@@ -1,3 +1,5 @@
+import System.Environment (getArgs)
+
 import qualified Data.Set as Set
 import Data.Set (Set)
 import Data.Void
@@ -6,6 +8,7 @@ import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Error
 import Control.Monad.Combinators
+
 
 data Calculi = Variable String | Lambda String Calculi | Call Calculi Calculi deriving Show
 
@@ -53,10 +56,14 @@ free (Lambda name text) = free text Set.\\ Set.singleton name
 
 data Ski = S | K | SKCall Ski Ski deriving Show
 
-pretty :: Ski -> String
-pretty S = "s"
-pretty K = "k"
-pretty (SKCall function argument) = pretty function ++ "(" ++ pretty argument ++ ")"
+pretty :: String -> Ski -> String
+pretty _ S = "s"
+pretty _ K = "k"
+pretty format (SKCall function argument) = replace format where 
+ replace ('f':xs) = pretty format function ++  replace xs
+ replace ('x':xs) = pretty format argument ++ replace xs
+ replace (c:xs) = c: replace xs
+ replace [] = []
 
 -- https://en.wikipedia.org/wiki/Combinatory_logic#Completeness_of_the_S-K_basis
 
@@ -99,6 +106,11 @@ convert :: Calculi -> Maybe Ski
 convert = reduce . simplify . expand
 
 main = do
+ args <- getArgs
+ let format = case args of {
+  [f] -> f;
+  _ -> "f(x)";
+ }
  stdin <- getContents
  let lambda = runParser (space *> term) "stdin" stdin
  case lambda of
@@ -107,4 +119,4 @@ main = do
    Nothing -> do 
     putStrLn "error: free variables"
     print $ Set.toAscList $ free valid
-   Just valid -> putStrLn $ pretty valid
+   Just valid -> putStrLn $ pretty format valid
