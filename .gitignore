@@ -5,3 +5,4 @@ ski
 *.lambda
 sample/insert_sort/insert.py
 dist/
+dist-newstyle
