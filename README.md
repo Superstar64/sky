@@ -12,6 +12,10 @@ Examples:
 * ``f(x)`` emits outputs like ``s(k)(k)``
 * ``afx`` emits outputs like ``aaskk``
 
+The terms 's' and 'k' can also be specified in the second and third argument
+Examples:
+* ``f(k) a b`` emits output like ``a(b)(b)``
+
 # Language
 The language has 5 types of terms:
 * variables : ``x``
