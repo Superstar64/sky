@@ -5,16 +5,6 @@ This is a simple program that converts lambda calculus expressions into sk combi
 
 The Haskell Platform and Megaparsec are required to build.
 
-# Output Format
-An optional argument is taken to deteremine the output format, where 'f' deteremines where to put the caller term and 'x' deteremines where to put the argument term.
-Examples:
-* ``%f(%x)`` emits outputs like ``s(k)(k)``
-* ``a%f%x`` emits outputs like ``aaskk``
-
-The terms 's' and 'k' can also be specified in the second and third argument
-Examples:
-* ``f(k) a b`` emits output like ``a(b)(b)``
-
 # Language
 The language has 5 types of terms:
 * variables : ``x``
@@ -29,4 +19,4 @@ C-style ``//`` comments are supported
 
 # Building
 The Haskell Platform and Megaparsec are required to build.
-Run either ``make`` to build the executable.
+Run ``make`` to build the executable and ``make samples`` to build all the samples.
