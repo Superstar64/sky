@@ -1,120 +1,95 @@
+{-# LANGUAGE DeriveTraversable #-}
+
 import Control.Monad.Combinators
-import Data.Set (Set)
-import qualified Data.Set as Set
+import Data.Map (Map)
+import qualified Data.Map as Map
 import Data.Void
 import System.Environment (getArgs)
+import System.Exit
 import Text.Megaparsec
 import Text.Megaparsec.Char
-import Text.Megaparsec.Error
 
-data Calculi = Variable String | Lambda String Calculi | Call Calculi Calculi deriving (Show)
+-- https://www.staff.city.ac.uk/~ross/papers/debruijn.html
+
+type Variables x = Map String x
 
 type Parser = Parsec Void String
 
-term :: Parser Calculi
-term = fmap (foldl1 Call) $ some $ mlambda <|> letin <|> named <|> parens
+data Term l x = Variable x | Call (Term l x) (Term l x) | Lambda l (Term l (Maybe x)) | S | K deriving (Show, Functor, Foldable, Traversable)
 
-letin :: Parser Calculi
-letin = do
-  string "let" *> space
-  name <- some alphaNumChar <* space
-  string "=" *> space
-  value <- term
-  string ";" *> space
-  text <- term
-  return $ Call (Lambda name text) value
+comment :: Parser ()
+comment = string "//" *> takeWhileP (Just "comment") (\x -> x /= '\n') *> pure ()
 
-named :: Parser Calculi
-named = do
-  name <- some alphaNumChar <* space
-  lambda name <|> return (Variable name)
+white :: Parser ()
+white = space *> (comment *> white <|> pure ())
 
-parens :: Parser Calculi
-parens = between (string "(" <* space) (string ")" <* space) term
+term :: Variables x -> Parser (Term () x)
+term sym = fmap (foldl1 Call) $ some $ named sym <|> parens sym
 
-lambda :: String -> Parser Calculi
-lambda current = do
+letin :: Variables x -> String -> Parser (Term () x)
+letin sym name = do
+  string "=" *> white
+  value <- term sym
+  string ";" *> white
+  text <- term (Map.singleton name Nothing <> Map.map Just sym)
+  return $ Call (Lambda () text) value
+
+lambda :: Variables x -> String -> Parser (Term () x)
+lambda sym name = do
   string "=>"
-  space
-  Lambda current <$> term
+  white
+  Lambda () <$> term (Map.singleton name Nothing <> Map.map Just sym)
 
-mlambda :: Parser Calculi
-mlambda = do
-  string "\\" *> space
-  variables <- some (some alphaNumChar <* space)
-  string "->" *> space
-  text <- term
-  return (foldr Lambda text variables)
+named :: Variables x -> Parser (Term () x)
+named sym = do
+  name <- some alphaNumChar <* white
+  lambda sym name <|> letin sym name <|> case Map.lookup name sym of
+    Nothing -> fail $ "free variable: " ++ name
+    Just x -> pure (Variable x)
 
-free :: Calculi -> Set String
-free (Variable name) = Set.singleton name
-free (Call function argument) = Set.union (free function) (free argument)
-free (Lambda name text) = free text Set.\\ Set.singleton name
+parens :: Variables x -> Parser (Term () x)
+parens sym = between (string "(" <* white) (string ")" <* white) (term sym)
 
-data Ski = S | K | SKCall Ski Ski deriving (Show)
+-- https://en.wikipedia.org/wiki/Combinatory_logic#Completeness_of_the_S-K_basis
 
-pretty :: String -> String -> String -> Ski -> String
-pretty _ s k S = s
-pretty _ s k K = k
-pretty format s k (SKCall function argument) = replace format
+simplify :: Term () x -> Term l x
+simplify (Variable x) = Variable x
+simplify (Call e e') = Call (simplify e) (simplify e')
+simplify (Lambda () e) = simplifyLambda e
+simplify S = S
+simplify K = K
+
+simplifyLambda :: Term () (Maybe x) -> Term l x
+simplifyLambda (Call e (Variable Nothing)) | Just e <- sequence e = simplify e
+simplifyLambda (Variable Nothing) = (S `Call` K) `Call` K
+simplifyLambda (Variable (Just x)) = K `Call` Variable x
+simplifyLambda (Call e e') = case (sequence e, sequence e') of
+  (Just e, Just e') -> K `Call` simplify e `Call` simplify e'
+  _ -> S `Call` simplifyLambda e `Call` simplifyLambda e'
+simplifyLambda (Lambda () e) = simplifyLambda $ simplifyLambda e
+simplifyLambda S = K `Call` S
+simplifyLambda K = K `Call` K
+
+pretty :: String -> String -> String -> (Term Void Void) -> String
+pretty _ s _ S = s
+pretty _ _ k K = k
+pretty format s k (Call function argument) = replace format
   where
     replace ('f' : xs) = pretty format s k function ++ replace xs
     replace ('x' : xs) = pretty format s k argument ++ replace xs
     replace (c : xs) = c : replace xs
     replace [] = []
-
--- https://en.wikipedia.org/wiki/Combinatory_logic#Completeness_of_the_S-K_basis
-
-data Intermidate = IVariable String | ICall Intermidate Intermidate | ILambda String Intermidate | IS | IK | II deriving (Show)
-
-search :: String -> Intermidate -> Bool
-search name (IVariable x) = name == x
-search name (ILambda _ text) = search name text
-search name (ICall left right) = search name left || search name right
-search _ IS = False
-search _ IK = False
-search _ II = False
-
-simplify :: Intermidate -> Intermidate
-simplify (ILambda name (ICall text (IVariable name'))) | name == name' && (not $ search name text) = simplify text
-simplify (IVariable name) = IVariable name
-simplify (ICall function argument) = ICall (simplify function) (simplify argument)
-simplify (ILambda name term) | (not $ search name term) = ICall IK $ simplify term
-simplify (ILambda name (IVariable name')) | name == name' = II
-simplify (ILambda name (ILambda name' text)) = simplify $ ILambda name $ simplify $ ILambda name' text
-simplify (ILambda name (ICall function argument)) = ICall (ICall IS $ simplify $ ILambda name function) $ simplify $ ILambda name argument
-simplify IS = IS
-simplify IK = IK
-simplify II = II
-
-expand :: Calculi -> Intermidate
-expand (Variable name) = IVariable name
-expand (Lambda name text) = ILambda name (expand text)
-expand (Call function argument) = ICall (expand function) (expand argument)
-
-reduce :: Intermidate -> Maybe Ski
-reduce (IVariable _) = Nothing
-reduce (ICall function argument) = pure SKCall <*> reduce function <*> reduce argument
-reduce (ILambda _ _) = Nothing
-reduce IS = Just S
-reduce IK = Just K
-reduce II = Just $ SKCall (SKCall S K) K
-
-convert :: Calculi -> Maybe Ski
-convert = reduce . simplify . expand
+pretty _ _ _ (Variable x) = absurd x
+pretty _ _ _ (Lambda x _) = absurd x
 
 main = do
   args <- getArgs
   let (format, s, k) = case args of
         [f] -> (f, "s", "k")
-        [f,s,k] -> (f, s, k)
+        [f, s, k] -> (f, s, k)
         _ -> ("f(x)", "s", "k")
   stdin <- getContents
-  let lambda = runParser (space *> term) "stdin" stdin
+  let lambda = runParser (white *> term Map.empty) "stdin" stdin
   case lambda of
-    Left error -> putStrLn $ errorBundlePretty error
-    Right valid -> case convert valid of
-      Nothing -> do
-        putStrLn "error: free variables"
-        print $ Set.toAscList $ free valid
-      Just valid -> putStrLn $ pretty format s k valid
+    Left error -> die $ errorBundlePretty error
+    Right valid -> putStrLn $ pretty format s k (simplify valid)

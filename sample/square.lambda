@@ -2,12 +2,12 @@
 // squaring a church numeral
 // see https://en.wikipedia.org/wiki/Lambda_calculus#Encoding_datatypes
  
-let zero = f => x => x;
+zero = f => x => x;
 
-let succ = n => f => z => f (n f z);
+succ = n => f => z => f (n f z);
 
-let plus = m => n => m succ n;
+plus = m => n => m succ n;
 
-let mul = m => n => m (plus n) zero;
+mul = m => n => m (plus n) zero;
 
 number => mul number number
