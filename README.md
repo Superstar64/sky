@@ -3,14 +3,13 @@ Simple Lambda Calculus to Ski compiler.
 
 This is a simple program that converts lambda calculus expressions into sk combinator expressions.
 
-
 The Haskell Platform and Megaparsec are required to build.
 
 # Output Format
 An optional argument is taken to deteremine the output format, where 'f' deteremines where to put the caller term and 'x' deteremines where to put the argument term.
 Examples:
-* ``f(x)`` emits outputs like ``s(k)(k)``
-* ``afx`` emits outputs like ``aaskk``
+* ``%f(%x)`` emits outputs like ``s(k)(k)``
+* ``a%f%x`` emits outputs like ``aaskk``
 
 The terms 's' and 'k' can also be specified in the second and third argument
 Examples:

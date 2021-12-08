@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveTraversable #-}
 
 import Control.Monad.Combinators
+import Data.List
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Void
@@ -70,26 +71,74 @@ simplifyLambda (Lambda () e) = simplifyLambda $ simplifyLambda e
 simplifyLambda S = K `Call` S
 simplifyLambda K = K `Call` K
 
-pretty :: String -> String -> String -> (Term Void Void) -> String
-pretty _ s _ S = s
-pretty _ _ k K = k
-pretty format s k (Call function argument) = replace format
+data Format = Format
+  { formatCall :: String,
+    formatS :: String,
+    formatK :: String
+  }
+
+pretty :: Format -> (Term Void Void) -> String
+pretty (Format _ s _) S = s
+pretty (Format _ _ k) K = k
+pretty format@(Format call _ _) (Call function argument) = replace call
   where
-    replace ('f' : xs) = pretty format s k function ++ replace xs
-    replace ('x' : xs) = pretty format s k argument ++ replace xs
+    replace ('%' : '%' : xs) = '%' : replace xs
+    replace ('%' : 'f' : xs) = pretty format function ++ replace xs
+    replace ('%' : 'x' : xs) = pretty format argument ++ replace xs
     replace (c : xs) = c : replace xs
     replace [] = []
-pretty _ _ _ (Variable x) = absurd x
-pretty _ _ _ (Lambda x _) = absurd x
+pretty _ (Variable x) = absurd x
+pretty _ (Lambda x _) = absurd x
+
+data CommandLine = CommandLine
+  { inputFile :: String,
+    outputFile :: String,
+    format :: Format,
+    help :: Bool
+  }
+
+commandDefault = CommandLine "-" "-" (Format "%f(%x)" "s" "k") False
+
+parseFlags :: [String] -> IO CommandLine
+parseFlags ("--help" : xs) = do
+  command <- parseFlags xs
+  pure $ command {help = True}
+parseFlags ("--format" : call : s : k : xs) = do
+  command <- parseFlags xs
+  pure $ command {format = Format call s k}
+parseFlags ("-o" : outputFile : xs) = do
+  command <- parseFlags xs
+  pure $ command {outputFile = outputFile}
+parseFlags (flag : xs) | flag /= "-" && isPrefixOf "-" flag = do
+  die $ "Unknown flag: " ++ flag
+parseFlags (inputFile : xs) = do
+  command <- parseFlags xs
+  pure $ command {inputFile = inputFile}
+parseFlags [] = pure commandDefault
 
 main = do
   args <- getArgs
-  let (format, s, k) = case args of
-        [f] -> (f, "s", "k")
-        [f, s, k] -> (f, s, k)
-        _ -> ("f(x)", "s", "k")
-  stdin <- getContents
-  let lambda = runParser (white *> term Map.empty) "stdin" stdin
+  command <- parseFlags args
+  if help command
+    then do
+      putStrLn "Usage: ski [options] [inputfile]"
+      putStrLn "Options:"
+      putStrLn " --format format s k"
+      putStrLn "     Specify a format for the ski output. Where `s` and `k` are strings that represent the combinator."
+      putStrLn "     'format' specifies the application syntax, where '%f' is function and '%x' is argument."
+      putStrLn "     For example: '%f(%x)' or 'a%f%x'"
+      putStrLn " -o file"
+      putStrLn "     Specify an output file. Standard Output is printed by default"
+      exitSuccess
+    else pure ()
+  input <-
+    if inputFile command == "-"
+      then getContents
+      else readFile (inputFile command)
+  let lambda = runParser (white *> term Map.empty) (inputFile command) input
   case lambda of
     Left error -> die $ errorBundlePretty error
-    Right valid -> putStrLn $ pretty format s k (simplify valid)
+    Right valid ->
+      if outputFile command == "-"
+        then putStrLn $ pretty (format command) (simplify valid)
+        else writeFile (outputFile command) $ pretty (format command) (simplify valid)

@@ -4,4 +4,4 @@ ski: ski.hs
 samples: sample/square.ski sample/fix.ski
 
 %.ski : %.lambda ski
-	cat $< | ./ski > $@ 
+	./ski $< -o $@ 
