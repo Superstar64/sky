@@ -65,7 +65,7 @@ simplifyLambda (Call e (Variable Nothing)) | Just e <- sequence e = simplify e
 simplifyLambda (Variable Nothing) = (S `Call` K) `Call` K
 simplifyLambda (Variable (Just x)) = K `Call` Variable x
 simplifyLambda (Call e e') = case (sequence e, sequence e') of
-  (Just e, Just e') -> K `Call` simplify e `Call` simplify e'
+  (Just e, Just e') -> K `Call` (simplify e `Call` simplify e')
   _ -> S `Call` simplifyLambda e `Call` simplifyLambda e'
 simplifyLambda (Lambda () e) = simplifyLambda $ simplifyLambda e
 simplifyLambda S = K `Call` S
