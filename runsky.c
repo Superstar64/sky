@@ -118,6 +118,7 @@ unsigned char read_byte(ski index, unsigned char data, int iterations) {
   }
 }
 
+// todo make tail recursive
 void print(ski node) {
   ski list = local(make_call(make_call(node, make(nil)), make(cons)));
   reduce(list);
