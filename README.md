@@ -1,22 +1,45 @@
-# LambdaSki
-Simple Lambda Calculus to Ski compiler.
+# Sky
+Lambda Calculus to Ski compiler and runtime.
 
-This is a simple program that converts lambda calculus expressions into sk combinator expressions.
+This is a compiler from lambda calculus expressions into an sk combinater based byte code and a runtime to evaluate it.
 
-The Haskell Platform and Megaparsec are required to build.
+## Runtime
+The runtime is only evaluates and prints output, it does not take input.
+The runtime excepts that the input code will be an expression with the type stream given:
+```
+type bool = forall a. a -> a -> a
+type byte = forall r. (bool -> bool -> bool -> bool -> bool -> bool -> bool -> bool -> r) -> r
+type list a = forall r. r -> (a -> list a -> r) -> r
+type stream = list byte
+```
+Notice that `list` uses a recursive type rather then boehm berarducci encoding.
 
-# Language
-The language has 5 types of terms:
-* variables : ``x``
-* lambdas : ``a => x``
-* application : ``f x``
-* let-in : ``a = b; x``
-* parenthesis : ``(x)``
+## Format
+The byte code format is very similar to [Iota](https://en.wikipedia.org/wiki/Iota_and_Jot) except that it uses `s` and `k` rather then just `i`.
+```
+code = "0" code code | "1" | "2"
+```
+Where `1` is `k` and `2` is `s`.
 
-The parenthesis are equivalent to the inner term. The let expressions are equivalent to creating a lambda and immediately calling it.
+The format the compiler emits in is configurable but format the runtime accepts is not. See ``./ski --help`` for more details.
+
+## Language
+* variables : `x`
+* lambdas : `a => x`
+* application : `f x`
+* let-in : `a = b; x`
+* parenthesis : `(x)`
+* character : `'a'`
+* nil : `[]`
+* cons : `x : xs`
+
+The parenthesis are equivalent to the inner term.
+The let expressions are equivalent to creating a lambda and immediately calling it.
+`character`, `nil`, and `cons` use the byte, list and list encoding respectively. 
 
 C-style ``//`` comments are supported
 
-# Building
-The Haskell Platform and Megaparsec are required to build.
-Run ``make`` to build the executable and ``make samples`` to build all the samples.
+## Building
+The Haskell Platform, Megaparsec, The Gnu Compiler Collection (for C), Make are required to build.
+If your on debian, you can install `haskell-platform`, `libghc-megaparsec-dev` and `build-essential`.
+Run ``make`` to build the executables and ``make samples`` to run the samples.

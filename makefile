@@ -1,7 +1,17 @@
-ski: ski.hs
-	ghc ski
+bin: sky runsky
 
-samples: sample/square.ski sample/fix.ski
+sky: sky.hs
+	ghc $@
 
-%.ski : %.lambda ski
-	./ski $< -o $@ 
+runsky: runsky.c
+	gcc $< -o $@
+
+samples: sample/hello.run sample/math.run
+
+sample/hello.sky sample/math.sky: %.sky : %.lambda sky
+	./sky $< -o $@ 
+
+sample/hello.run sample/math.run: %.run : %.sky runsky
+	./runsky $<
+	touch $@
+

@@ -1,9 +1,12 @@
 {-# LANGUAGE DeriveTraversable #-}
 
 import Control.Monad.Combinators
+import Data.Bits (shiftR, (.&.))
+import Data.Char (ord)
 import Data.List
 import Data.Map (Map)
 import qualified Data.Map as Map
+import Data.Maybe (fromJust)
 import Data.Void
 import System.Environment (getArgs)
 import System.Exit
@@ -18,28 +21,44 @@ type Parser = Parsec Void String
 
 data Term l x = Variable x | Call (Term l x) (Term l x) | Lambda l (Term l (Maybe x)) | S | K deriving (Show, Functor, Foldable, Traversable)
 
+bind :: String -> Variables x -> Variables (Maybe x)
+bind name sym = Map.insert name Nothing $ fmap Just sym
+
 comment :: Parser ()
 comment = string "//" *> takeWhileP (Just "comment") (\x -> x /= '\n') *> pure ()
 
 white :: Parser ()
 white = space *> (comment *> white <|> pure ())
 
+builtin code = fromJust $ parseMaybe (term (Map.empty)) code
+
+builtinTrue = builtin "a => b => a"
+
+builtinFalse = builtin "a => b => b"
+
+builtinNil = builtinTrue
+
 term :: Variables x -> Parser (Term () x)
-term sym = fmap (foldl1 Call) $ some $ named sym <|> parens sym
+term sym = do
+  core <- fmap (foldl1 Call) $ some $ termCore sym
+  cons sym core <|> pure core
+
+termCore :: Variables x -> Parser (Term () x)
+termCore sym = named sym <|> parens sym <|> charLiteral <|> nil
 
 letin :: Variables x -> String -> Parser (Term () x)
 letin sym name = do
   string "=" *> white
   value <- term sym
   string ";" *> white
-  text <- term (Map.singleton name Nothing <> Map.map Just sym)
+  text <- term (bind name sym)
   return $ Call (Lambda () text) value
 
 lambda :: Variables x -> String -> Parser (Term () x)
 lambda sym name = do
   string "=>"
   white
-  Lambda () <$> term (Map.singleton name Nothing <> Map.map Just sym)
+  Lambda () <$> term (bind name sym)
 
 named :: Variables x -> Parser (Term () x)
 named sym = do
@@ -50,6 +69,43 @@ named sym = do
 
 parens :: Variables x -> Parser (Term () x)
 parens sym = between (string "(" <* white) (string ")" <* white) (term sym)
+
+nil = do
+  string "[" *> white
+  string "]" *> white
+  pure $ builtinNil
+
+cons :: Variables x -> Term () x -> Parser (Term () x)
+cons sym head = do
+  string ":" *> white
+  tail <- term sym
+  return $ Lambda () $ Lambda () $ (Variable Nothing) `Call` (Just . Just <$> head) `Call` (Just . Just <$> tail)
+
+letter :: Parser Char
+letter = do
+  c <- asciiChar
+  if c == '\\'
+    then do
+      c <- asciiChar
+      case c of
+        '\\' -> pure '\\'
+        'n' -> pure '\n'
+        c -> fail $ "unknown escape code " ++ [c]
+    else pure c
+
+encodeChar x = Lambda () $ foldl Call (Variable Nothing) (fmap Just <$> branch <$> bytes x)
+  where
+    bytes :: Char -> [Bool]
+    bytes x' | x <- ord x' = map (== 1) [x `shiftR` i .&. 1 | i <- reverse [0 .. 7]]
+    branch True = builtinTrue
+    branch False = builtinFalse
+
+charLiteral :: Parser (Term () x)
+charLiteral = do
+  string "'"
+  x <- letter
+  string "'" *> white
+  pure $ encodeChar x
 
 -- https://en.wikipedia.org/wiki/Combinatory_logic#Completeness_of_the_S-K_basis
 
@@ -97,13 +153,13 @@ data CommandLine = CommandLine
     help :: Bool
   }
 
-commandDefault = CommandLine "-" "-" (Format "%f(%x)" "s" "k") False
+commandDefault = CommandLine "-" "-" (Format "0%f%x" "2" "1") False
 
 parseFlags :: [String] -> IO CommandLine
 parseFlags ("--help" : xs) = do
   command <- parseFlags xs
   pure $ command {help = True}
-parseFlags ("--format" : call : s : k : xs) = do
+parseFlags ("--format" : call : k : s : xs) = do
   command <- parseFlags xs
   pure $ command {format = Format call s k}
 parseFlags ("-o" : outputFile : xs) = do
@@ -123,8 +179,8 @@ main = do
     then do
       putStrLn "Usage: ski [options] [inputfile]"
       putStrLn "Options:"
-      putStrLn " --format format s k"
-      putStrLn "     Specify a format for the ski output. Where `s` and `k` are strings that represent the combinator."
+      putStrLn " --format format k s"
+      putStrLn "     Specify a format for the ski output. Where `k` and `s` are strings that represent the combinator."
       putStrLn "     'format' specifies the application syntax, where '%f' is function and '%x' is argument."
       putStrLn "     For example: '%f(%x)' or 'a%f%x'"
       putStrLn " -o file"
@@ -135,7 +191,7 @@ main = do
     if inputFile command == "-"
       then getContents
       else readFile (inputFile command)
-  let lambda = runParser (white *> term Map.empty) (inputFile command) input
+  let lambda = runParser (white *> term Map.empty <* eof) (inputFile command) input
   case lambda of
     Left error -> die $ errorBundlePretty error
     Right valid ->

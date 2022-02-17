@@ -1,0 +1,9 @@
+// math in the lambda calculus
+// see https://en.wikipedia.org/wiki/Lambda_calculus#Encoding_datatypes
+
+format = n => n (x => '1' : '+' : x) ('0' : '\n' : []);
+
+four = f => x => f (f (f (f x)));
+mul = m => n => f => m (n f);
+
+format (mul four four)

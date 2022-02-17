@@ -1,5 +1,0 @@
-
-//the z fixed point combinator
-//see https://en.wikipedia.org/wiki/Fixed-point_combinator#Strict_fixed_point_combinator
-
-f => (x => f(v => x x v))(x => f(v => x x v)) 

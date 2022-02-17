@@ -1,5 +1,6 @@
-ski
+sky
+runsky
 *.o
 *.hi
-*.ski
-
+*.sky
+*.run
