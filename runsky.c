@@ -114,13 +114,13 @@ char read_bit(ski node) {
   }
 }
 
-char read_byte(ski index, char data, int iterations) {
-  if (iterations > 0) {
+int read_byte(ski index, int data, int lower, int upper) {
+  if (lower < upper) {
     ski bit = local(make_call(make_call(index->right, make(yes)), make(no)));
     reduce(bit);
-    data |= read_bit(bit) << 8 - iterations;
+    data |= read_bit(bit) << lower;
     deref(bit);
-    return read_byte(index->left, data, iterations - 1);
+    return read_byte(index->left, data, lower + 1, upper);
   } else {
     return data;
   }
@@ -141,7 +141,7 @@ void print(ski node) {
     ski word = local(make_call(head, make(byte)));
     reduce(word);
     enforce(function(word, byte, 8), "unable to extract byte from stream");
-    putchar(read_byte(word, 0, 8));
+    putchar(read_byte(word, 0, 0, 8));
     deref(word);
 
     tail->ref++;
