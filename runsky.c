@@ -102,7 +102,7 @@ void reduce(ski node) {
   }
 }
 
-unsigned char read_byte(ski index, unsigned char data, int iterations) {
+char read_byte(ski index, char data, int iterations) {
   if (iterations > 0) {
     ski bit = local(make_call(make_call(index->right, make(yes)), make(no)));
     reduce(bit);
@@ -118,10 +118,13 @@ unsigned char read_byte(ski index, unsigned char data, int iterations) {
   }
 }
 
-// todo make tail recursive
+// consumes `node`
 void print(ski node) {
   ski list = local(make_call(make_call(node, make(nil)), make(cons)));
   reduce(list);
+
+  deref(node);
+
   if (function(list, cons, 2)) {
     ski head = list->left->right;
     ski tail = list->right;
@@ -129,15 +132,16 @@ void print(ski node) {
     ski word = local(make_call(head, make(byte)));
     reduce(word);
     enforce(function(word, byte, 8), "unable to extract byte from stream");
-    unsigned char data = read_byte(word, 0, 8);
-    putchar(data);
-
+    putchar(read_byte(word, 0, 8));
     deref(word);
+
+    tail->ref++;
+    deref(list);
     print(tail);
   } else {
     enforce(function(list, nil, 0), "bad list element");
+    deref(list);
   }
-  deref(list);
 }
 
 ski parse(FILE *file) {
@@ -160,7 +164,6 @@ int main(int argc, const char **argv) {
   }
   ski node = local(parse(file));
   print(node);
-  deref(node);
   fclose(file);
   return 0;
 }
