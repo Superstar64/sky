@@ -161,5 +161,6 @@ int main(int argc, const char **argv) {
   ski node = local(parse(file));
   print(node);
   deref(node);
+  fclose(file);
   return 0;
 }
