@@ -25,8 +25,10 @@ struct ski_data {
 bool function(ski node, enum ski_tag key, int args) {
   if (args == 0) {
     return key == node->tag;
+  } else if (node->tag == call) {
+    return function(node->left, key, args - 1);
   } else {
-    return node->tag == call && function(node->left, key, args - 1);
+    return false;
   }
 }
 
@@ -102,15 +104,21 @@ void reduce(ski node) {
   }
 }
 
+char read_bit(ski node) {
+  if (function(node, yes, 0)) {
+    return 1;
+  } else if (function(node, no, 0)) {
+    return 0;
+  } else {
+    enforce(false, "unable to extract bit from byte");
+  }
+}
+
 char read_byte(ski index, char data, int iterations) {
   if (iterations > 0) {
     ski bit = local(make_call(make_call(index->right, make(yes)), make(no)));
     reduce(bit);
-    if (function(bit, yes, 0)) {
-      data |= 1 << 8 - iterations;
-    } else {
-      enforce(function(bit, no, 0), "unable to extract bit from byte");
-    }
+    data |= read_bit(bit) << 8 - iterations;
     deref(bit);
     return read_byte(index->left, data, iterations - 1);
   } else {
@@ -118,7 +126,8 @@ char read_byte(ski index, char data, int iterations) {
   }
 }
 
-// consumes `node`
+// Consumes it's argument and also expects it to be unpacked. This is used
+// for tail recursion.
 void print(ski node) {
   ski list = local(make_call(make_call(node, make(nil)), make(cons)));
   reduce(list);
@@ -138,9 +147,10 @@ void print(ski node) {
     tail->ref++;
     deref(list);
     print(tail);
-  } else {
-    enforce(function(list, nil, 0), "bad list element");
+  } else if (function(list, nil, 0)) {
     deref(list);
+  } else {
+    enforce(false, "bad list element");
   }
 }
 
