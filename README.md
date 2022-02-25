@@ -40,6 +40,8 @@ The let expressions are equivalent to creating a lambda and immediately calling 
 C-style ``//`` comments are supported
 
 ## Building
-The Haskell Platform, Megaparsec, The Gnu Compiler Collection (for C), Make are required to build.
-If your on debian, you can install `haskell-platform`, `libghc-megaparsec-dev` and `build-essential`.
+A Glasgow Haskell compiler, alongside the Megaparsec library, is required to build the compiler.
+The Gnu Compiler Collection (for C), Make is required to build the runtime.
+If your on debian based distros, you can install `ghc`, `libghc-megaparsec-dev`, `gcc`, and `make`.
+Otherwise, install ghc, cabal, gcc, and make though your normal operating system means and run `cabal install megaparsec`.
 Run ``make`` to build the executables and ``make samples`` to run the samples.
