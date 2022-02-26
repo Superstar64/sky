@@ -104,7 +104,7 @@ void reduce(ski node) {
   }
 }
 
-char read_bit(ski node) {
+unsigned read_bit(ski node) {
   if (function(node, yes, 0)) {
     return 1;
   } else if (function(node, no, 0)) {
@@ -114,7 +114,7 @@ char read_bit(ski node) {
   }
 }
 
-int read_byte(ski index, int data, int lower, int upper) {
+unsigned read_byte(ski index, unsigned data, unsigned lower, unsigned upper) {
   if (lower < upper) {
     ski bit = local(make_call(make_call(index->right, make(yes)), make(no)));
     reduce(bit);
