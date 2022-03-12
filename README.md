@@ -45,3 +45,6 @@ The Gnu Compiler Collection (for C), Make is required to build the runtime.
 If your on debian based distros, you can install `ghc`, `libghc-megaparsec-dev`, `gcc`, and `make`.
 Otherwise, install ghc, cabal, gcc, and make though your normal operating system means and run `cabal install megaparsec`.
 Run ``make`` to build the executables and ``make samples`` to run the samples.
+
+# Recommended Video
+For a general introduction into ski combinators and graph reduction, I would recommend this video: ["An Introduction to Combinator Compilers and Graph Reduction Machines" by David Graunke](https://youtu.be/GawiQQCn3bk).
