@@ -47,4 +47,6 @@ Otherwise, install ghc, cabal, gcc, and make though your normal operating system
 Run ``make`` to build the executables and ``make samples`` to run the samples.
 
 # Recommended Video
-For a general introduction into ski combinators and graph reduction, I would recommend this video: ["An Introduction to Combinator Compilers and Graph Reduction Machines" by David Graunke](https://youtu.be/GawiQQCn3bk).
+* For a general introduction into the lambda calculus: [Lambda Calculus - Fundamentals of Lambda Calculus & Functional Programming in JavaScript
+](https://youtu.be/3VQ382QG-y4).
+* For a general introduction into ski combinators and graph reduction: ["An Introduction to Combinator Compilers and Graph Reduction Machines" by David Graunke](https://youtu.be/GawiQQCn3bk).
