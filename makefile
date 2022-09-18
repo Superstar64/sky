@@ -6,12 +6,18 @@ sky: sky.hs
 runsky: runsky.c
 	gcc $< -o $@
 
-samples: sample/hello.run sample/math.run
+samples=sample/hello.lambda sample/math.lambda sample/lazy.lambda
 
-sample/hello.sky sample/math.sky: %.sky : %.lambda sky
+samples: $(samples:%.lambda=%.run_c) $(samples:%.lambda=%.run_py)
+
+$(samples:%.lambda=%.sky): %.sky : %.lambda sky
 	./sky $< -o $@ 
 
-sample/hello.run sample/math.run: %.run : %.sky runsky
+$(samples:%.lambda=%.run_c): %.run_c : %.sky runsky
 	./runsky $<
+	touch $@
+
+$(samples:%.lambda=%.run_py): %.run_py : %.sky runsky.py
+	python3 runsky.py $<
 	touch $@
 

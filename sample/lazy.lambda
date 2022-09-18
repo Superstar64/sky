@@ -1,0 +1,3 @@
+// basic test to ensure evaluation is lazy
+
+(ignore => 'a' : 'b' : 'c' : '\n' : []) ((x => x(x))(x => x(x)))

@@ -3,4 +3,5 @@ runsky
 *.o
 *.hi
 *.sky
-*.run
+*.run_c
+*.run_py
