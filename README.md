@@ -3,7 +3,7 @@ Lambda Calculus to Ski compiler and runtime.
 
 This is a compiler from lambda calculus expressions into an sk combinater based byte code and a runtime to evaluate it.
 
-This is inspired by [Miranda](https://en.wikipedia.org/wiki/Miranda_(programming_language)'s complination model and [Lazy K](https://tromp.github.io/cl/lazy-k.html).
+This is inspired by [Miranda](https://en.wikipedia.org/wiki/Miranda_(programming_language))'s complination model and [Lazy K](https://tromp.github.io/cl/lazy-k.html).
 ## Runtime
 The runtime only evaluates and prints output, it does not take input.
 The runtime excepts that the input code will be an expression with the type stream given:
