@@ -16,7 +16,7 @@ type stream = list byte
 These types use [Mogensen Scott encoding](https://en.wikipedia.org/wiki/Mogensen%E2%80%93Scott_encoding).
 Notice that `list` uses a recursive type rather then Boehm-Berarducci encoding.
 
-`1` is encoded as `λx y. x`.
+A `1` bit is encoded as `λx y. x`.
 
 ## Format
 The byte code format is very similar to [Iota](https://en.wikipedia.org/wiki/Iota_and_Jot) except that it uses `s` and `k` rather then just `i`.
