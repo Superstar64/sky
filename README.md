@@ -23,7 +23,7 @@ The byte code format is very similar to [Iota](https://en.wikipedia.org/wiki/Iot
 ```
 code = "0" code code | "1" | "2"
 ```
-Where `1` is `k` and `2` is `s`.
+Where `0 e e'` is `e(e')`, `1` is `k`, and `2` is `s`.
 
 The format the compiler emits in is configurable but format the runtime accepts is not. See ``./ski --help`` for more details.
 
