@@ -1,5 +1,5 @@
 # Sky
-Lambda Calculus to Ski compiler and runtime.
+Lambda Calculus to SKI compiler and runtime.
 
 This is a compiler from lambda calculus expressions into an sk combinater based byte code and a runtime to evaluate it.
 
@@ -50,7 +50,7 @@ If your on debian based distros, you can install `ghc`, `libghc-megaparsec-dev`,
 Otherwise, install ghc, cabal, gcc, and make though your normal operating system means and run `cabal install megaparsec`.
 Run ``make`` to build the executables and ``make samples`` to run the samples.
 
-# Recommended Video
+# Recommended Videos
 * For a general introduction into the lambda calculus: [Lambda Calculus - Fundamentals of Lambda Calculus & Functional Programming in JavaScript
 ](https://youtu.be/3VQ382QG-y4).
 * For a general introduction into ski combinators and graph reduction: ["An Introduction to Combinator Compilers and Graph Reduction Machines" by David Graunke](https://youtu.be/GawiQQCn3bk).
