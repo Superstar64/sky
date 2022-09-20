@@ -23,15 +23,11 @@ def call(f, *x):
         return call(call(f, *x[:-1]), x[-1])
 
 
-def function(f, n, *args):
+def function(f, n, *e):
     if n == 0:
-        return f(*args)
+        return f(*e)
     else:
-        return lambda: lambda x: function(f, n - 1, *args, x)
-
-
-k = function(lambda x, y: x, 2)
-s = function(lambda x, y, z: call(call(x, z), call(y, z)), 3)
+        return lambda: lambda x: function(f, n - 1, *e, x)
 
 
 def ski():
@@ -39,34 +35,27 @@ def ski():
     if token == "0":
         return call(ski(), ski())
     elif token == "1":
-        return k
+        return function(lambda x, y: x, 2)
     elif token == "2":
-        return s
-
-
-def bit(encoded):
-    return call(encoded, lambda: 1, lambda: 0)()
+        return function(lambda x, y, z: call(call(x, z), call(y, z)), 3)
 
 
 def byte(encoded):
     def decode(*bits):
         byte = 0
         for b in bits:
-            byte = byte << 1 | bit(b)
+            byte = byte << 1 | call(b, lambda: 1, lambda: 0)()
         return lambda: byte
 
     return call(encoded, function(decode, 8))()
 
 
-def stream(encoded):
-    item = call(
-        encoded,
-        lambda: None,
-        function(lambda x, xs: lambda: (x, xs), 2),
-    )()
-    if item:
-        print(chr(byte(item[0])), end="")
-        stream(item[1])
+def uncons(encoded):
+    return call(encoded, lambda: None, function(lambda x, xs: lambda: (x, xs), 2))()
 
 
-stream(ski())
+stream = uncons(ski())
+
+while stream:
+    print(chr(byte(stream[0])), end="")
+    stream = uncons(stream[1])
