@@ -29,13 +29,13 @@ The format the compiler emits in is configurable but format the runtime accepts 
 
 ## Language
 * variables : `x`
-* lambdas : `a => x`
-* application : `f x`
-* let-in : `a = b; x`
-* parenthesis : `(x)`
+* lambdas : `x => e`
+* application : `e e'`
+* let-in : `x = e; e'`
+* parenthesis : `(e)`
 * character : `'a'`
 * nil : `[]`
-* cons : `x : xs`
+* cons : `e : e'`
 
 The parenthesis are equivalent to the inner term.
 The let expressions are equivalent to creating a lambda and immediately calling it.
