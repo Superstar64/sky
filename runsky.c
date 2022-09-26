@@ -104,7 +104,7 @@ void reduce(ski node) {
   }
 }
 
-unsigned read_bit(ski node) {
+char read_bit(ski node) {
   if (function(node, yes, 0)) {
     return 1;
   } else if (function(node, no, 0)) {
@@ -114,16 +114,16 @@ unsigned read_bit(ski node) {
   }
 }
 
-unsigned read_byte(ski index, unsigned data, unsigned lower, unsigned upper) {
-  if (lower < upper) {
+char read_byte(ski index) {
+  char data = 0;
+  for (int lower = 0; lower < 8; lower++) {
     ski bit = local(make_call(make_call(index->right, make(yes)), make(no)));
     reduce(bit);
     data |= read_bit(bit) << lower;
     deref(bit);
-    return read_byte(index->left, data, lower + 1, upper);
-  } else {
-    return data;
+    index = index->left;
   }
+  return data;
 }
 
 // Consumes it's argument and also expects it to be unpacked. This is used
@@ -141,7 +141,7 @@ void print(ski node) {
     ski word = local(make_call(head, make(byte)));
     reduce(word);
     enforce(function(word, byte, 8), "unable to extract byte from stream");
-    putchar(read_byte(word, 0, 0, 8));
+    putchar(read_byte(word));
     deref(word);
 
     tail->ref++;
