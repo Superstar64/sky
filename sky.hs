@@ -2,7 +2,7 @@
 
 import Control.Monad.Combinators
 import Data.Bits (shiftR, (.&.))
-import Data.Char (ord)
+import Data.Char (isAscii, ord)
 import Data.List
 import Data.Map (Map)
 import qualified Data.Map as Map
@@ -90,7 +90,7 @@ cons sym head = do
 
 letter :: Parser Char
 letter = do
-  c <- asciiChar
+  c <- satisfy (\x -> isAscii x && x /= '"' && x /= '\"')
   if c == '\\'
     then do
       c <- asciiChar
@@ -120,7 +120,7 @@ axiom :: Parser (Term () x)
 axiom = do
   string "_builtin"
   white
-  x <- some alphaNumChar
+  x <- some alphaNumChar <|> string "\"" *> some letter <* string "\""
   white
   pure (Axiom x)
 

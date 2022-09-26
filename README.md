@@ -36,7 +36,7 @@ The format the compiler emits in is configurable but format the runtime accepts 
 * character : `'a'`
 * nil : `[]`
 * cons : `e : e'`
-* axiom : `_builtin x`
+* axiom : `_builtin x` `_builtin 'x'`
 
 The parenthesis are equivalent to the inner term.
 The let expressions are equivalent to creating a lambda and immediately calling it.
