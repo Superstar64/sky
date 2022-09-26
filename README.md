@@ -36,10 +36,12 @@ The format the compiler emits in is configurable but format the runtime accepts 
 * character : `'a'`
 * nil : `[]`
 * cons : `e : e'`
+* axiom : `_builtin x`
 
 The parenthesis are equivalent to the inner term.
 The let expressions are equivalent to creating a lambda and immediately calling it.
-`character`, `nil`, and `cons` use the byte, list and list encoding respectively. 
+`character`, `nil`, and `cons` use the byte, list and list encoding respectively.
+Axiom are emitted direct into the output.
 
 C-style ``//`` comments are supported
 

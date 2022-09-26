@@ -19,18 +19,25 @@ type Variables x = Map String x
 
 type Parser = Parsec Void String
 
-data Term l x = Variable x | Call (Term l x) (Term l x) | Lambda l (Term l (Maybe x)) | S | K deriving (Show, Functor, Foldable, Traversable)
+data Term l x
+  = Variable x
+  | Call (Term l x) (Term l x)
+  | Lambda l (Term l (Maybe x))
+  | S
+  | K
+  | Axiom String
+  deriving (Show, Functor, Foldable, Traversable)
 
 bind :: String -> Variables x -> Variables (Maybe x)
 bind name sym = Map.insert name Nothing $ fmap Just sym
 
 comment :: Parser ()
-comment = string "//" *> takeWhileP (Just "comment") (\x -> x /= '\n') *> pure ()
+comment = () <$ string "//" <* takeWhileP (Just "comment") (/= '\n')
 
 white :: Parser ()
 white = space *> (comment *> white <|> pure ())
 
-builtin code = fromJust $ parseMaybe (term (Map.empty)) code
+builtin code = fromJust $ parseMaybe (term Map.empty) code
 
 builtinTrue = builtin "a => b => a"
 
@@ -44,7 +51,7 @@ term sym = do
   cons sym core <|> pure core
 
 termCore :: Variables x -> Parser (Term () x)
-termCore sym = named sym <|> parens sym <|> charLiteral <|> nil
+termCore sym = named sym <|> parens sym <|> charLiteral <|> nil <|> axiom
 
 letin :: Variables x -> String -> Parser (Term () x)
 letin sym name = do
@@ -79,7 +86,7 @@ cons :: Variables x -> Term () x -> Parser (Term () x)
 cons sym head = do
   string ":" *> white
   tail <- term sym
-  return $ Lambda () $ Lambda () $ (Variable Nothing) `Call` (Just . Just <$> head) `Call` (Just . Just <$> tail)
+  return $ Lambda () $ Lambda () $ Variable Nothing `Call` (Just . Just <$> head) `Call` (Just . Just <$> tail)
 
 letter :: Parser Char
 letter = do
@@ -89,14 +96,16 @@ letter = do
       c <- asciiChar
       case c of
         '\\' -> pure '\\'
+        '\'' -> pure '\''
+        '\"' -> pure '\"'
         'n' -> pure '\n'
         c -> fail $ "unknown escape code " ++ [c]
     else pure c
 
-encodeChar x = Lambda () $ foldl Call (Variable Nothing) (fmap Just <$> branch <$> bytes x)
+encodeChar x = Lambda () $ foldl Call (Variable Nothing) (fmap Just . branch <$> bytes x)
   where
     bytes :: Char -> [Bool]
-    bytes x' | x <- ord x' = map (== 1) [x `shiftR` i .&. 1 | i <- reverse [0 .. 7]]
+    bytes x' | x <- ord x' = [x `shiftR` i .&. 1 == 1 | i <- reverse [0 .. 7]]
     branch True = builtinTrue
     branch False = builtinFalse
 
@@ -107,6 +116,14 @@ charLiteral = do
   string "'" *> white
   pure $ encodeChar x
 
+axiom :: Parser (Term () x)
+axiom = do
+  string "_builtin"
+  white
+  x <- some alphaNumChar
+  white
+  pure (Axiom x)
+
 -- https://en.wikipedia.org/wiki/Combinatory_logic#Completeness_of_the_S-K_basis
 
 simplify :: Term () x -> Term l x
@@ -115,6 +132,7 @@ simplify (Call e e') = Call (simplify e) (simplify e')
 simplify (Lambda () e) = simplifyLambda e
 simplify S = S
 simplify K = K
+simplify (Axiom str) = Axiom str
 
 simplifyLambda :: Term () (Maybe x) -> Term l x
 simplifyLambda (Call e (Variable Nothing)) | Just e <- sequence e = simplify e
@@ -126,6 +144,7 @@ simplifyLambda (Call e e') = case (sequence e, sequence e') of
 simplifyLambda (Lambda () e) = simplifyLambda $ simplifyLambda e
 simplifyLambda S = K `Call` S
 simplifyLambda K = K `Call` K
+simplifyLambda (Axiom str) = K `Call` Axiom str
 
 data Format = Format
   { formatCall :: String,
@@ -133,7 +152,7 @@ data Format = Format
     formatK :: String
   }
 
-pretty :: Format -> (Term Void Void) -> String
+pretty :: Format -> Term Void Void -> String
 pretty (Format _ s _) S = s
 pretty (Format _ _ k) K = k
 pretty format@(Format call _ _) (Call function argument) = replace call
@@ -143,6 +162,7 @@ pretty format@(Format call _ _) (Call function argument) = replace call
     replace ('%' : 'x' : xs) = pretty format argument ++ replace xs
     replace (c : xs) = c : replace xs
     replace [] = []
+pretty _ (Axiom str) = str
 pretty _ (Variable x) = absurd x
 pretty _ (Lambda x _) = absurd x
 
