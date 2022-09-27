@@ -1,9 +1,27 @@
 // math in the lambda calculus
-// see https://en.wikipedia.org/wiki/Lambda_calculus#Encoding_datatypes
+// see https://en.wikipedia.org/wiki/Lambda_calculus
 
 format = n => n (x => '1' : '+' : x) ('0' : '\n' : []);
 
-four = f => x => f (f (f (f x)));
-mul = m => n => f => m (n f);
+fix = f => (x => f (x x))(x => f (x x));
 
-format (mul four four)
+true = x => y => x;
+false = x => y => y;
+
+0 = f => x => x;
+1 = f => x => f x;
+2 = f => x => f (f x);
+3 = f => x => f (f (f x));
+4 = f => x => f (f (f (f x)));
+5 = f => x => f (f (f (f (f x))));
+
+plus = m => n => f => x => m f (n f x);
+mul = m => n => f => m (n f);
+isZero = n => n (x => false) true;
+
+// stolen from wikipedia
+pred = n => n (g => k => isZero (g 1) k (plus (g k) 1)) (v => 0) 0;
+
+fact = fix(fact => n => isZero n (1) (mul n (fact (pred n))));
+
+format (fact 5)
