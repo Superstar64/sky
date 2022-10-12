@@ -1,5 +1,5 @@
 sky
-runsky
+run_sky
 *.o
 *.hi
 *.sky

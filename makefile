@@ -1,9 +1,9 @@
-bin: sky runsky
+bin: sky run_sky
 
 sky: sky.hs
 	ghc $@
 
-runsky: runsky.c
+run_sky: run_sky.c
 	gcc $< -o $@
 
 samples=sample/hello.lambda sample/math.lambda sample/lazy.lambda
@@ -13,11 +13,11 @@ samples: $(samples:%.lambda=%.run_c) $(samples:%.lambda=%.run_py)
 $(samples:%.lambda=%.sky): %.sky : %.lambda sky
 	./sky $< -o $@ 
 
-$(samples:%.lambda=%.run_c): %.run_c : %.sky runsky
-	./runsky $<
+$(samples:%.lambda=%.run_c): %.run_c : %.sky run_sky
+	./run_sky $<
 	touch $@
 
-$(samples:%.lambda=%.run_py): %.run_py : %.sky runsky.py
-	python3 runsky.py $<
+$(samples:%.lambda=%.run_py): %.run_py : %.sky run_sky.py
+	python3 run_sky.py $<
 	touch $@
 
