@@ -46,10 +46,20 @@ Axiom are emitted direct into the output.
 C-style ``//`` comments are supported
 
 ## Building
-A Glasgow Haskell compiler, alongside the Megaparsec library, is required to build the compiler.
-The Gnu Compiler Collection (for C), Make is required to build the runtime.
-If your on debian based distros, you can install `ghc`, `libghc-megaparsec-dev`, `gcc`, and `make`.
-Otherwise, install ghc, cabal, gcc, and make though your normal operating system means and run `cabal install megaparsec --lib`.
+### Debian
+Install these packages
+* make
+* gcc
+* python3
+* ghc
+* libghc-megaparsec-dev
+
+### Generic
+Ensure that the Gnu C Compiler, Python, the Glasgow Haskell Compiler, Cabel are all installed then. Then run:
+```
+cabal install megaparsec --lib
+```
+
 Run ``make`` to build the executables and ``make samples`` to run the samples.
 
 # Recommended Videos
