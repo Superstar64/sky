@@ -1,5 +1,5 @@
 // math in the lambda calculus
-// see https://en.wikipedia.org/wiki/Lambda_calculus
+// taken from https://en.wikipedia.org/wiki/Lambda_calculus
 
 format = n => n (x => '1' : '+' : x) ('0' : '\n' : []);
 
@@ -19,7 +19,6 @@ plus = m => n => f => x => m f (n f x);
 mul = m => n => f => m (n f);
 isZero = n => n (x => false) true;
 
-// stolen from wikipedia
 pred = n => n (g => k => isZero (g 1) k (plus (g k) 1)) (v => 0) 0;
 
 fact = fix(fact => n => isZero n (1) (mul n (fact (pred n))));

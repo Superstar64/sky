@@ -1,12 +1,16 @@
 # Sky
 Lambda Calculus to SKI compiler and runtime.
 
-This is a compiler from lambda calculus expressions into an sk combinater based byte code and a runtime to evaluate it.
+This project is composed of:
+
+* A Haskell compiler from lambda calculus expressions to a custom ski byte code
+* A C interpeter that runs the ski expressions via graph reduction
+* A Python interpeter that runs the ski expressions via compilation to lazy thunks.
 
 This is inspired by [Miranda](https://en.wikipedia.org/wiki/Miranda_(programming_language))'s compilation model and [Lazy K](https://tromp.github.io/cl/lazy-k.html).
+
 ## Runtime
-The runtime only evaluates and prints output, it does not take input.
-The runtime excepts that the input code will be an expression with the type stream given:
+The runtime only evaluates and prints output, it does not take input. It excepts that the input code will be a stream of bytes with the given type encodings:
 ```
 type bool = forall a. a -> a -> a
 type byte = forall r. (bool -> bool -> bool -> bool -> bool -> bool -> bool -> bool -> r) -> r
@@ -16,16 +20,7 @@ type stream = list byte
 These types use [Mogensen Scott encoding](https://en.wikipedia.org/wiki/Mogensen%E2%80%93Scott_encoding).
 Notice that `list` uses a recursive type rather then Boehm-Berarducci encoding.
 
-A `1` bit is encoded as `λx y. x`.
-
-## Format
-The byte code format is very similar to [Iota](https://en.wikipedia.org/wiki/Iota_and_Jot) except that it uses `s` and `k` rather then just `i`.
-```
-code = "0" code code | "1" | "2"
-```
-Where `0 e e'` is `e(e')`, `1` is `k`, and `2` is `s`.
-
-The format the compiler emits in is configurable but format the runtime accepts is not. See ``./ski --help`` for more details.
+A `1` bit is encoded as true (`λx y. x`).
 
 ## Language
 * variables : `x`
@@ -44,6 +39,18 @@ The let expressions are equivalent to creating a lambda and immediately calling 
 Axiom are emitted direct into the output.
 
 C-style ``//`` comments are supported
+
+## Format
+The byte code format is very similar to [Iota](https://en.wikipedia.org/wiki/Iota_and_Jot) except that it uses `s` and `k` rather then just `i`.
+```
+code = "0" code code | "1" | "2"
+```
+
+Where `0 e e'` is `e(e')`, `1` is `k`, and `2` is `s`.
+
+The C interpeter has some internal additional axioms to used by `runtime.lambda` to aid graph reduction.
+
+The format the compiler emits in is configurable but format the runtime accepts is not. See ``./sky --help`` for format configuration details.
 
 ## Building
 ### Debian

@@ -198,6 +198,7 @@ main = do
   if help command
     then do
       putStrLn "Usage: ski [options] [inputfile]"
+      putStrLn "Description: Compile lambda calculus into sky byte code"
       putStrLn "Options:"
       putStrLn " --format format k s"
       putStrLn "     Specify a format for the ski output. Where `k` and `s` are strings that represent the combinator."

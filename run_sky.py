@@ -1,8 +1,3 @@
-from sys import stdin, argv
-
-code = stdin if len(argv) < 2 else open(argv[1])
-
-
 def delay(f):
     done = False
 
@@ -30,10 +25,10 @@ def function(f, n, *e):
         return lambda: lambda x: function(f, n - 1, *e, x)
 
 
-def ski():
-    token = code.read(1)
+def ski(file):
+    token = file.read(1)
     if token == "0":
-        return call(ski(), ski())
+        return call(ski(file), ski(file))
     elif token == "1":
         return function(lambda x, y: x, 2)
     elif token == "2":
@@ -54,8 +49,14 @@ def uncons(encoded):
     return call(encoded, lambda: None, function(lambda x, xs: lambda: (x, xs), 2))()
 
 
-stream = uncons(ski())
+from sys import stdin, argv
 
-while stream:
-    print(chr(byte(stream[0])), end="")
-    stream = uncons(stream[1])
+if len(argv) < 2:
+    print("Usage: python", argv[0], "input.sky")
+    print("Description: Evaluate sky byte code and print the results")
+else:
+    code = open(argv[1]) if argv[1] != "-" else stdin
+    stream = uncons(ski(code))
+    while stream:
+        print(chr(byte(stream[0])), end="")
+        stream = uncons(stream[1])

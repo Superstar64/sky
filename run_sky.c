@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 void enforce(bool legal, const char *message) {
   if (!legal) {
@@ -105,6 +106,7 @@ void reduce(ski node) {
 }
 
 char read_bit(ski node) {
+  reduce(node);
   if (function(node, yes, 0)) {
     return 1;
   } else if (function(node, no, 0)) {
@@ -115,34 +117,26 @@ char read_bit(ski node) {
 }
 
 char read_byte(ski index) {
+  reduce(index);
+  enforce(function(index, byte, 8), "unable to extract byte from stream");
   char data = 0;
   for (int lower = 0; lower < 8; lower++) {
-    ski bit = local(make_call(make_call(index->right, make(yes)), make(no)));
-    reduce(bit);
+    ski bit = index->right;
     data |= read_bit(bit) << lower;
-    deref(bit);
     index = index->left;
   }
   return data;
 }
 
-// Consumes it's argument and also expects it to be unpacked. This is used
-// for tail recursion.
-void print(ski node) {
-  ski list = local(make_call(make_call(node, make(nil)), make(cons)));
+// Consumes it's argument. This is used for tail recursion.
+void print(ski list) {
   reduce(list);
-
-  deref(node);
 
   if (function(list, cons, 2)) {
     ski head = list->left->right;
     ski tail = list->right;
 
-    ski word = local(make_call(head, make(byte)));
-    reduce(word);
-    enforce(function(word, byte, 8), "unable to extract byte from stream");
-    putchar(read_byte(word));
-    deref(word);
+    putchar(read_byte(head));
 
     tail->ref++;
     deref(list);
@@ -166,14 +160,34 @@ ski parse(FILE *file) {
   }
 }
 
-int main(int argc, const char **argv) {
-  FILE *file = stdin;
-  if (argc > 1) {
-    file = fopen(argv[1], "r");
-    enforce(file, "bad file name");
+ski parse_file(const char *name) {
+  FILE *file = strcmp(name, "-") == 0 ? stdin : fopen(name, "r");
+  if (!file) {
+    fprintf(stderr, "bad file name: %s\n", name);
+    exit(1);
   }
-  ski node = local(parse(file));
-  print(node);
+  ski node = parse(file);
   fclose(file);
+  return node;
+}
+
+int main(int argc, const char **argv) {
+  if (argc < 2) {
+    printf("Usage: %s input1.sky input2.sky ...\n", argv[0]);
+    printf("Description: Evaluate sky byte code and print the results\n");
+    printf("Inputs:\n");
+    printf(" The input files are applied to each other right associatively\n");
+    printf(" For example %s f.sky g.sky x.sky is treated as f(g(x))\n",
+           argv[0]);
+    printf(" The final expression should evaluate to a stream of bytes\n");
+    return 0;
+  }
+
+  ski expression = parse_file(argv[argc - 1]);
+  for (int i = argc - 2; i > 0; i--) {
+    expression = make_call(parse_file(argv[i]), expression);
+  }
+  expression->ref++;
+  print(expression);
   return 0;
 }

@@ -1,0 +1,22 @@
+byte = _builtin 3;
+yes = _builtin 4;
+no = _builtin 5;
+nil = _builtin 6;
+cons = _builtin 7;
+(f => (x => f(x x))(x => f(x x)))
+
+(
+    fold =>
+    list =>
+    list
+        (nil)
+        (
+            x => xs =>
+            cons
+                (x (0 => 1 => 2 => 3 => 4 => 5 => 6 => 7 =>
+                    bit = f => f(yes)(no);
+                    byte (bit 0) (bit 1) (bit 2) (bit 3) (bit 4) (bit 5) (bit 6) (bit 7)
+                ))
+                (fold xs)
+        )
+)

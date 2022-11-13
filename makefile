@@ -13,8 +13,11 @@ samples: $(samples:%.lambda=%.run_c) $(samples:%.lambda=%.run_py)
 $(samples:%.lambda=%.sky): %.sky : %.lambda sky
 	./sky $< -o $@ 
 
-$(samples:%.lambda=%.run_c): %.run_c : %.sky run_sky
-	./run_sky $<
+runtime.sky : runtime.lambda sky
+	./sky $< -o $@
+
+$(samples:%.lambda=%.run_c): %.run_c : %.sky run_sky runtime.sky
+	./run_sky runtime.sky $<
 	touch $@
 
 $(samples:%.lambda=%.run_py): %.run_py : %.sky run_sky.py
