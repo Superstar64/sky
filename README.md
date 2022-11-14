@@ -62,7 +62,7 @@ Install these packages
 * libghc-megaparsec-dev
 
 ### Generic
-Ensure that the Gnu C Compiler, Python, the Glasgow Haskell Compiler, Cabel are all installed then. Then run:
+Ensure that the Gnu C Compiler, Python, the Glasgow Haskell Compiler, Cabel are all installed, then run:
 ```
 cabal install megaparsec --lib
 ```
