@@ -45,13 +45,15 @@ builtinFalse = builtin "a => b => b"
 
 builtinNil = builtinTrue
 
+builtinCons head tail = Lambda () $ Lambda () $ Variable Nothing `Call` (Just . Just <$> head) `Call` (Just . Just <$> tail)
+
 term :: Variables x -> Parser (Term () x)
 term sym = do
   core <- fmap (foldl1 Call) $ some $ termCore sym
   cons sym core <|> pure core
 
 termCore :: Variables x -> Parser (Term () x)
-termCore sym = named sym <|> parens sym <|> charLiteral <|> nil <|> axiom
+termCore sym = named sym <|> parens sym <|> charLiteral <|> stringLiteral <|> nil <|> axiom
 
 letin :: Variables x -> String -> Parser (Term () x)
 letin sym name = do
@@ -86,7 +88,7 @@ cons :: Variables x -> Term () x -> Parser (Term () x)
 cons sym head = do
   string ":" *> white
   tail <- term sym
-  return $ Lambda () $ Lambda () $ Variable Nothing `Call` (Just . Just <$> head) `Call` (Just . Just <$> tail)
+  return $ builtinCons head tail
 
 letter :: Parser Char
 letter = do
@@ -115,6 +117,13 @@ charLiteral = do
   x <- letter
   string "'" *> white
   pure $ encodeChar x
+
+stringLiteral :: Parser (Term () x)
+stringLiteral = do
+  string "\""
+  xs <- many letter
+  string "\"" *> white
+  pure $ foldr builtinCons builtinNil (map encodeChar xs)
 
 axiom :: Parser (Term () x)
 axiom = do

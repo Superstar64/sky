@@ -31,6 +31,7 @@ A `1` bit is encoded as true (`λx y. x`).
 * character : `'a'`
 * nil : `[]`
 * cons : `e : e'`
+* string : `"abcd"`
 * axiom : `_builtin x` `_builtin 'x'`
 
 The parenthesis are equivalent to the inner term.
